@@ -9,49 +9,51 @@ ROBOFLOW_PROJECT_ID = "project1-pfqn3"
 ROBOFLOW_MODEL_VERSION = "2"
 
 def nail_page():
-    st.header("Bienvenue dans la détection d'ongle")
-    # Titre de l'application
-    st.title("Test de Modèle Roboflow")
-    # Chargement de l'image par l'utilisateur
-    uploaded_image = st.file_uploader("Téléchargez une image", type=["jpg", "jpeg", "png"])
+    # Division de la page en 3 colonnes
+    col1, col2, col3 = st.columns([1, 8, 1])
+    with col2:
+        st.title("Bienvenue dans la détection d'ongles (Modèle Roboflow)")
+        st.image(Image.open("images/Ongles.jpg"))
+        # Chargement de l'image par l'utilisateur
+        uploaded_image = st.file_uploader("Téléchargez une image", type=["jpg", "jpeg", "png"])
 
-    if uploaded_image is not None:
-        # Afficher l'image téléchargée
-        image = Image.open(uploaded_image)
-        st.image(image, caption="Image téléchargée")
+        if uploaded_image is not None:
+            # Afficher l'image téléchargée
+            image = Image.open(uploaded_image)
+            st.image(image, caption="Image téléchargée")
 
-        # Bouton pour faire une prédiction
-        if st.button("Faire une prédiction"):
-            # Appeler la fonction de prédiction
-            result = predict_image(image)
+            # Bouton pour faire une prédiction
+            if st.button("Faire une prédiction"):
+                # Appeler la fonction de prédiction
+                result = predict_image(image)
 
-            # Afficher les résultats de la prédiction
-            if result:
-                st.subheader("Résultats de la prédiction")
-                #st.json(result)  # Afficher les résultats sous forme JSON
+                # Afficher les résultats de la prédiction
+                if result:
+                    st.subheader("Résultats de la prédiction")
+                    #st.json(result)  # Afficher les résultats sous forme JSON
 
-                time = result.get("time")
-                # Ajouter du texte ou dessiner des boîtes sur l'image ici si nécessaire
-                st.write(f"Prédiction(s) en {time} secondes")
+                    time = result.get("time")
+                    # Ajouter du texte ou dessiner des boîtes sur l'image ici si nécessaire
+                    st.write(f"Prédiction(s) en {time} secondes")
 
-                # Affichage des résultats de la prédiction:
-                predictions = result.get("predictions", [])
-                p = 0
-                for pred in predictions:
-                    confidence = pred["confidence"]
-                    st.write(f"Prédiction : {p}, Confiance : {confidence}")
-                    p += 1
+                    # Affichage des résultats de la prédiction:
+                    predictions = result.get("predictions", [])
+                    p = 0
+                    for pred in predictions:
+                        confidence = pred["confidence"]
+                        st.write(f"Prédiction : {p}, Confiance : {confidence}")
+                        p += 1
 
-                st.subheader("Résultats de la détection")
+                    st.subheader("Résultats de la détection")
 
-                # Extraire les prédictions
-                detections = result.get("predictions")
+                    # Extraire les prédictions
+                    detections = result.get("predictions")
 
-                # Dessiner les prédictions sur l'image
-                image_with_detections = draw_detections(image, detections)
+                    # Dessiner les prédictions sur l'image
+                    image_with_detections = draw_detections(image, detections)
 
-                # Afficher l'image avec les annotations
-                st.image(image_with_detections, caption="Image avec détections", use_column_width=True)
+                    # Afficher l'image avec les annotations
+                    st.image(image_with_detections, caption="Image avec détections", use_column_width=True)
 
 # Fonction pour faire une prédiction via l'API Roboflow
 def predict_image(image):
