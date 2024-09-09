@@ -1,5 +1,9 @@
 import streamlit as st
 from PIL import Image
+import os
+
+# Chemin absolu du répertoire du projet
+project_dir = "PycharmProjects/ML"
 
 def intro():
     col1, col2, col3 = st.columns([1, 8, 1])
@@ -7,4 +11,5 @@ def intro():
 
         st.title("Machine Learning on Streamlit")
         st.write("Open the sidebar and choose a topic")
-        st.image(Image.open("images/ML.jpg"))
+        image_path = os.path.join(project_dir, "images", "ML.jpg")
+        st.image(Image.open(image_path))
