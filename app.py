@@ -24,9 +24,10 @@ type_data = st.sidebar.radio(
     ["Introduction", "Regression", "Classification", "NailsDetection"]
 )
 
+
+
 if type_data == "Regression":
     image_path = os.path.join(project_dir, "images", "logoDiabete.png")
-    st.write(os.getcwd())
     st.logo(image_path, icon_image=image_path)
     regression_page()
 elif type_data == "Classification":
