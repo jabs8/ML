@@ -8,8 +8,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from PIL import Image
 from lazypredict.Supervised import LazyClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.svm import SVC
 import os
 
@@ -20,17 +19,19 @@ project_dir = project_dir()
 
 
 def classification_page():
-    # Division de la page en 3 colonnes
-    col1, col2, col3 = st.columns([1, 8, 1])
-    with col2:
-        st.title("Bienvenue dans la classification des vins")
-        # Uploader le csv
-        uploaded_file = st.file_uploader("Choisissez un fichier CSV", type="csv")
-        image_path = os.path.join(project_dir, "images", "CouleursVins.jpg")
-        st.image(Image.open(image_path))
+    tab1, tab2, tab3 = st.tabs(["init", "plot", "model"])
 
-        if uploaded_file:
-            df = pd.read_csv(uploaded_file, index_col=0)
+    with tab1:
+        # Division de la page en 3 colonnes
+        col1, col2, col3 = st.columns([1, 8, 1])
+        with col2:
+            st.title("Bienvenue dans la classification des vins")
+            # Uploader le csv
+            uploaded_file = st.file_uploader("Choisissez un fichier CSV", type="csv")
+            image_path = os.path.join("", "images", "CouleursVins.jpg")
+            st.image(Image.open(image_path))
+            if uploaded_file:
+                df = pd.read_csv(uploaded_file, index_col=0)
 
             # Dataset infos
             ds_info = st.checkbox("Voir l'analyse préliminaire du dataset")
@@ -42,12 +43,16 @@ def classification_page():
             if pair_plot:
                 pair_plot(df)
 
+    with tab3:
+        # Division de la page en 3 colonnes
+        col1, col2 = st.columns([5,5])
+        with col1:
             chosen_target = st.selectbox('Choose the Target Column', df.columns, index=len(df.columns) - 1)
             st.session_state['chosen_target'] = chosen_target
             X = df.drop(chosen_target, axis=1)
             y = df[chosen_target]
-            target = st.slider('Test_Size', 0.01, 0.99)
-            random_state = st.slider('Random_State', 0, 100)
+            target = st.slider('Test_Size', 0.1, 0.9, value=0.2)
+            random_state = st.slider('Random_State', 0, 100, value=69)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=target, random_state=random_state)
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X_train)
@@ -99,8 +104,10 @@ def classification_page():
             st.write(plot_confusion_matrix(y_test, y_pred_best))
             st.write(plot_class_distribution(y_pred_best, le))
 
+        with col2:
             # cross validation
-
+            st.write("coucou")
+            import cros
 
 def pair_plot(df):
     st.write('Pairplot of Vine Dataset')
