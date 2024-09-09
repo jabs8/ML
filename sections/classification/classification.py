@@ -12,8 +12,11 @@ from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_sc
 from sklearn.svm import SVC
 import os
 
+from config import project_dir
+
 # Chemin absolu du répertoire du projet
-project_dir = "PycharmProjects/ML"
+project_dir = project_dir()
+
 
 def classification_page():
     tab1, tab2, tab3 = st.tabs(["init", "plot", "model"])
@@ -30,15 +33,15 @@ def classification_page():
             if uploaded_file:
                 df = pd.read_csv(uploaded_file, index_col=0)
 
-                # Dataset infos
-                ds_info = st.checkbox("Voir l'analyse préliminaire du dataset")
-                if ds_info:
-                    dataset_info(df)
-    with tab2:
-        # Show pairplot
-        pair_plot = st.checkbox("pairplot (take some time)")
-        if pair_plot:
-            pair_plot(df)
+            # Dataset infos
+            ds_info = st.checkbox("Voir l'analyse préliminaire du dataset")
+            if ds_info:
+                dataset_info(df)
+
+            # Show pairplot
+            pair_plot = st.checkbox("pairplot (take some time)")
+            if pair_plot:
+                pair_plot(df)
 
     with tab3:
         # Division de la page en 3 colonnes
