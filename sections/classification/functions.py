@@ -39,7 +39,6 @@ def analyze_target(df):
 def correlation_matrix(df):
     numeric_columns = df.select_dtypes(['float64', 'int64']).columns
     if len(numeric_columns) > 1:
-        st.subheader("Matrice de Corrélation des Colonnes Numériques")
         fig, ax = plt.subplots()
         sns.heatmap(df.drop("target", axis=1).corr(), annot=True, fmt=".1f", cmap="coolwarm", ax=ax)
         st.pyplot(fig)
