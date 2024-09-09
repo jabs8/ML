@@ -1,9 +1,10 @@
 import streamlit as st
 from PIL import Image
 import os
+from config import project_dir
 
 # Chemin absolu du répertoire du projet
-project_dir = "PycharmProjects/ML"
+project_dir = project_dir()
 
 def intro():
     col1, col2, col3 = st.columns([1, 8, 1])

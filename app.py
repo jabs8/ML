@@ -1,3 +1,5 @@
+from os import getcwd
+
 import streamlit as st
 
 from sections.Introduction import intro
@@ -5,9 +7,10 @@ from sections.classification.classification import classification_page
 from sections.nailsdetection.nails import nail_page
 from sections.regression.regression import regression_page
 import os
+from config import project_dir
 
-# Chemin absolu du répertoire du projet
-project_dir = "PycharmProjects/ML"
+project_dir = project_dir()
+
 
 st.set_page_config(
     page_title="Playground ML",
@@ -23,6 +26,7 @@ type_data = st.sidebar.radio(
 
 if type_data == "Regression":
     image_path = os.path.join(project_dir, "images", "logoDiabete.png")
+    st.write(os.getcwd())
     st.logo(image_path, icon_image=image_path)
     regression_page()
 elif type_data == "Classification":

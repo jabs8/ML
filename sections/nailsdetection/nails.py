@@ -2,9 +2,10 @@ from inference_sdk import InferenceHTTPClient
 import streamlit as st
 from PIL import Image, ImageDraw
 import os
+from config import project_dir
 
 # Chemin absolu du répertoire du projet
-project_dir = "PycharmProjects/ML"
+project_dir = project_dir()
 
 # Détails projet roboflow
 ROBOFLOW_API_KEY = "xfMVPjHjsorrG6VOGPa7"
