@@ -1,7 +1,10 @@
 from inference_sdk import InferenceHTTPClient
 import streamlit as st
 from PIL import Image, ImageDraw
+import os
 
+# Chemin absolu du répertoire du projet
+project_dir = "PycharmProjects/ML"
 
 # Détails projet roboflow
 ROBOFLOW_API_KEY = "xfMVPjHjsorrG6VOGPa7"
@@ -13,7 +16,8 @@ def nail_page():
     col1, col2, col3 = st.columns([1, 8, 1])
     with col2:
         st.title("Bienvenue dans la détection d'ongles (Modèle Roboflow)")
-        st.image(Image.open("images/Ongles.jpg"))
+        image_path = os.path.join(project_dir, "images", "Ongles.jpg")
+        st.image(Image.open(image_path))
         # Chargement de l'image par l'utilisateur
         uploaded_image = st.file_uploader("Téléchargez une image", type=["jpg", "jpeg", "png"])
 
