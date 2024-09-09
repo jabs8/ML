@@ -13,8 +13,11 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 import os
 
+from config import project_dir
+
 # Chemin absolu du répertoire du projet
-project_dir = "PycharmProjects/ML"
+project_dir = project_dir()
+
 
 def classification_page():
     # Division de la page en 3 colonnes
@@ -25,6 +28,7 @@ def classification_page():
         uploaded_file = st.file_uploader("Choisissez un fichier CSV", type="csv")
         image_path = os.path.join(project_dir, "images", "CouleursVins.jpg")
         st.image(Image.open(image_path))
+
         if uploaded_file:
             df = pd.read_csv(uploaded_file, index_col=0)
 
