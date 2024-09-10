@@ -17,7 +17,7 @@ import seaborn as sns
 from sklearn.feature_selection import SelectKBest, f_regression
 from PIL import Image
 import os
-
+import pickle
 from config import project_dir
 
 # Chemin absolu du répertoire du projet
@@ -39,16 +39,16 @@ def preprocess_data(data, target_column):
     y = data[target_column]
 
     # Feature engineering
-    poly = PolynomialFeatures(degree=2, include_bias=False)
-    X_poly = poly.fit_transform(X)
-    feature_names = poly.get_feature_names_out(X.columns)
-    X_poly = pd.DataFrame(X_poly, columns=feature_names)
+    #poly = PolynomialFeatures(degree=2, include_bias=False)
+    #X_poly = poly.fit_transform(X)
+    #feature_names = poly.get_feature_names_out(X.columns)
+    #X_poly = pd.DataFrame(X_poly, columns=feature_names)
 
     # Normalisation
-    scaler = StandardScaler()
-    X_scaled = pd.DataFrame(scaler.fit_transform(X_poly), columns=X_poly.columns)
+    #scaler = StandardScaler()
+    #X_scaled = pd.DataFrame(scaler.fit_transform(X_poly), columns=X_poly.columns)
 
-    return X_scaled, y
+    return X, y
 
 
 def select_features(X, y):
@@ -81,14 +81,6 @@ def plot_scatterplot(data, x_col, y_col):
     ax.set_title(f'{x_col} vs {y_col}')
     return fig
 
-'''def plot_correlation_matrix(data):
-    corr = data.corr()
-    mask = np.triu(np.ones_like(corr, dtype=bool))
-    fig, ax = plt.subplots(figsize=(10, 8))
-    sns.heatmap(corr, mask=mask, annot=False, cmap='coolwarm', ax=ax, cbar_kws={'label': 'Correlation Coefficient'})
-    plt.title('Matrice de Corrélation')
-    return fig'''
-
 def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_model=None, manual_hyperparameters=None):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
 
@@ -112,13 +104,11 @@ def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_mo
 
             best_model = grid_search.best_estimator_
             y_pred = best_model.predict(X_test)
-            y_pred_train = best_model.predict(X_train)
 
             cv_scores = cross_val_score(best_model, X, y, cv=cv, scoring='neg_mean_squared_error')
             cv_rmse = np.sqrt(-cv_scores)
 
             results[name] = {
-                'r2_train' : r2_score(y_train, y_pred_train),
                 'train_score': best_model.score(X_train, y_train),
                 'test_score': best_model.score(X_test, y_test),
                 'model': best_model,
@@ -141,7 +131,6 @@ def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_mo
         cv_rmse = np.sqrt(-cv_scores)
 
         results[selected_model] = {
-            'r2_train': r2_score(y_test, y_pred_train),
             'train_score': model.score(X_train, y_train),
             'test_score': model.score(X_test, y_test),
             'model': model,
@@ -217,7 +206,7 @@ def regression_page():
     # Division de la page en 3 colonnes
     col1, col2, col3 = st.columns([1, 8, 1])
     with col2:
-        st.markdown("<h1 style='color: #003366;'>Prédiction de la progression du diabète</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #003366;'>Prédiction de la progression du diabète</h1>",unsafe_allow_html=True)
 
         uploaded_file = st.file_uploader("Téléchargez votre fichier CSV", type=["csv"])
         image_path = os.path.join(project_dir, "images", "progression_diabete.jpeg")
@@ -240,22 +229,22 @@ def regression_page():
                 # Appel de la fonction et extraction des résultats
                 diabetes_model, predictions = lazy_regressor(data)
 
-                st.dataframe(diabetes_model.head(4))
+                st.dataframe(diabetes_model.head(10))
 
             matrice_correlation = st.toggle("Matrice de Corrélation", value=False)
             if matrice_correlation:
-                st.subheader("Matrice de Corrélation")
+                st.markdown("<h1 style='color: #003366;'>Matrice de Corrélation</h1>", unsafe_allow_html=True)
                 st.dataframe(data.corr().style.background_gradient(cmap='coolwarm'))
 
-            target_options = ["Choisir..."] + list(data.columns)
+            target_options = ["Choisir la colonne cible pour la régression"] + list(data.columns)
             target_column = st.selectbox("Sélectionnez la colonne cible pour la régression", target_options)
 
             if target_column and target_column != "Choisir...":
                 show_scatterplot = st.toggle("Afficher le Scatterplot", value=False)
                 if show_scatterplot:
-                    scatterplot_options = ["Choisir..."] + [col for col in data.columns if col != target_column]
+                    scatterplot_options = ["Choisir la variable pour l'axe X du scatterplot"] + [col for col in data.columns if col != target_column]
                     scatterplot_x = st.selectbox("Sélectionnez la variable pour l'axe X du scatterplot", scatterplot_options)
-                    if scatterplot_x and scatterplot_x != "Choisir...":
+                    if scatterplot_x and scatterplot_x != "Choisir la variable pour l'axe X du scatterplot":
                         st.subheader(f"Scatterplot: {scatterplot_x} vs {target_column}")
                         fig = plot_scatterplot(data, scatterplot_x, target_column)
                         st.pyplot(fig)
@@ -282,12 +271,11 @@ def regression_page():
                         st.success("Modèle entraîné avec succès!")
 
                     if 'results' in st.session_state:
-                        st.subheader("Résultats de l'entraînement des modèles")
+                        st.markdown("<h1 style='color: #003366;'>Résultats de l'entraînement des modèles</h1>", unsafe_allow_html=True)
                         for name, result in st.session_state.results.items():
                             with st.expander(f"{name}"):
-                                st.write(f"r2_train: {result['r2_train']:.4f}")
                                 st.write(f"Train Score: {result['train_score']:.4f}")
-                                st.write(f"Test Score Score: {result['test_score']:.4f}")
+                                st.write(f"Test Score : {result['test_score']:.4f}")
                                 st.write(f"MSE: {result['mse']:.4f}")
                                 st.write(f"R2 Score: {result['r2']:.4f}")
                                 st.write(f"MAE: {result['mae']:.4f}")
@@ -308,7 +296,7 @@ def regression_page():
 
                         Comparaison_metriques = st.toggle("Comparaison des métriques", value=False)
                         if Comparaison_metriques:
-                            st.subheader("Comparaison des métriques")
+                            st.markdown("<h1 style='color: #003366;'>Comparaison des métriques</h1>",unsafe_allow_html=True)
                             fig = plot_results(st.session_state.results)
                             st.pyplot(fig)
 
@@ -325,13 +313,27 @@ def regression_page():
 
                         plot_Predictions = st.toggle("Valeurs Prédites vs Réelles", value=False)
                         if plot_Predictions:
-                            st.subheader("Valeurs Prédites vs Réelles")
+                            st.markdown("<h1 style='color: #003366;'>Valeurs Prédites vs Réelles</h1>",unsafe_allow_html=True)
                             best_model = st.session_state.results[best_model_name]['model']
                             fig_pred = plot_predictions(best_model, st.session_state.X_test, st.session_state.y_test)
                             st.pyplot(fig_pred)
 
                         if st.button("Sauvegarder le Meilleur Modèle"):
-                            st.success("Modèle sauvegardé avec succès !")
+                            # Sauvegarder le modèle avec pickle
+                            with open('random_forest_model.pkl', 'wb') as f:
+                                best_model = st.session_state.results[best_model_name]['model']
+                                pickle.dump(best_model, f)
+
+                            # Message de succès après la sauvegarde
+                            st.success("Le modèle a été sauvegardé avec succès sous 'diabete_model.pkl'.")
+                            # Permettre le téléchargement du fichier
+                            with open('random_forest_model.pkl', 'rb') as f:
+                                st.download_button(
+                                    label="Télécharger le modèle",
+                                    data=f,
+                                    file_name='random_forest_model.pkl',
+                                    mime="application/octet-stream"
+                                )
             else:
                 st.write("Veuillez sélectionner une colonne cible pour continuer l'analyse.")
 
