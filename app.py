@@ -6,6 +6,7 @@ from sections.Introduction import intro
 from sections.classification.classification import classification_page
 from sections.nailsdetection.nails import nail_page
 from sections.regression.regression import regression_page
+from sections.about_us.about_us import about_us_page
 import os
 from config import project_dir
 
@@ -19,9 +20,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
 type_data = st.sidebar.radio(
     "Choisissez votre type de playground",
-    ["Introduction", "Regression", "Classification", "NailsDetection"]
+    ["Introduction", "Regression", "Classification", "NailsDetection", "About Us"]
 )
 
 
@@ -42,3 +44,11 @@ elif type_data == "Introduction":
     image_path = os.path.join(project_dir, "images", "logoML.png")
     st.logo(image_path, icon_image=image_path)
     intro()
+elif type_data == "about_us":
+    image_path = os.path.join(project_dir, "images", "logoML.png")
+    st.logo(image_path, icon_image=image_path)
+    intro()
+elif type_data == "About Us":
+    image_path = os.path.join(project_dir, "images", "teampicture.png")
+    st.logo(image_path, icon_image=image_path)
+    about_us_page()

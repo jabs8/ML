@@ -4,13 +4,15 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from lazypredict.Supervised import LazyRegressor
-from sklearn.model_selection import train_test_split, GridSearchCV, KFold
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.linear_model import ElasticNet, Ridge, Lasso, TweedieRegressor, LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from scipy import stats
+import seaborn as sns
+
 
 
 # Suppression de la fonction center()
@@ -46,12 +48,27 @@ def lazy_regressor(data):
     diabetes_model = reg.fit(train_X, val_X, train_y, val_y)
     return diabetes_model
 
+def plot_scatterplot(data, x_col, y_col):
+    fig, ax = plt.subplots(figsize=(20, 6))
+    ax.scatter(data[x_col], data[y_col])
+    ax.set_xlabel(x_col)
+    ax.set_ylabel(y_col)
+    ax.set_title(f'{x_col} vs {y_col}')
+    return fig
+
+'''def plot_correlation_matrix(data):
+    corr = data.corr()
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(corr, mask=mask, annot=False, cmap='coolwarm', ax=ax, cbar_kws={'label': 'Correlation Coefficient'})
+    plt.title('Matrice de Corrélation')
+    return fig'''
 
 def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_model=None, manual_hyperparameters=None):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
 
     models = {
-        'ElasticNet': (ElasticNet(), {'alpha': [0.0, 0.1, 1.0, 10], 'l1_ratio': [0.0, 0.1, 0.5, 0.7, 1.0]}),
+        'ElasticNet': (ElasticNet(), {'alpha': [0.0, 0.1, 1.0, 10, 0.5, 0.7, 0,4, 0.2], 'l1_ratio': [0.0, 0.1, 0.5, 0.7, 1.0]}),
         'Ridge': (Ridge(), {'alpha': [0.1, 1.0, 10]}),
         'Lasso': (Lasso(), {'alpha': [0.1, 1.0, 10]}),
         'RandomForest': (RandomForestRegressor(), {'n_estimators': [100, 200], 'max_depth': [None, 10, 20]}),
@@ -62,12 +79,16 @@ def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_mo
     results = {}
     if hyperparameter_tuning == "Automatique":
         for name, (model, param_grid) in models.items():
-            cv = KFold(n_splits=5)
+            cv = KFold(n_splits=5, shuffle=True, random_state=42)
             grid_search = GridSearchCV(model, param_grid, cv=cv, scoring='neg_mean_squared_error', n_jobs=-1)
             grid_search.fit(X_train, y_train)
 
             best_model = grid_search.best_estimator_
             y_pred = best_model.predict(X_test)
+
+            # Perform cross-validation
+            cv_scores = cross_val_score(best_model, X, y, cv=cv, scoring='neg_mean_squared_error')
+            cv_rmse = np.sqrt(-cv_scores)
 
             results[name] = {
                 'Train_Score': best_model.score(X_train, y_train),
@@ -76,7 +97,9 @@ def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_mo
                 'mse': mean_squared_error(y_test, y_pred),
                 'r2': r2_score(y_test, y_pred),
                 'mae': mean_absolute_error(y_test, y_pred),
-                'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
+                'rmse': np.sqrt(mean_squared_error(y_test, y_pred)),
+                'cv_rmse_mean': cv_rmse.mean(),
+                'cv_rmse_std': cv_rmse.std()
             }
     else:
         model = models[selected_model][0]
@@ -84,6 +107,10 @@ def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_mo
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
+        # Perform cross-validation
+        cv = KFold(n_splits=5, shuffle=True, random_state=42)
+        cv_scores = cross_val_score(model, X, y, cv=cv, scoring='neg_mean_squared_error')
+        cv_rmse = np.sqrt(-cv_scores)
 
         results[selected_model] = {
             'Train_Score': model.score(X_train, y_train),
@@ -92,7 +119,9 @@ def train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_mo
             'mse': mean_squared_error(y_test, y_pred),
             'r2': r2_score(y_test, y_pred),
             'mae': mean_absolute_error(y_test, y_pred),
-            'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
+            'rmse': np.sqrt(mean_squared_error(y_test, y_pred)),
+            'cv_rmse_mean': cv_rmse.mean(),
+            'cv_rmse_std': cv_rmse.std()
         }
 
     return results, X_test, y_test
@@ -147,58 +176,72 @@ def plot_predictions(model, X_test, y_test):
 
 
 def regression_page():
-    st.title("Analyse de Régression")
+    st.markdown("<h1 style='color: #003366;'>Prédiction de la progression du diabète</h1>", unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader("Téléchargez votre fichier CSV", type=["csv"])
 
     if uploaded_file:
-        data = load_data(uploaded_file)
+        if 'data' not in st.session_state:
+            st.session_state.data = load_data(uploaded_file)
+        data = st.session_state.data
 
         st.subheader("Aperçu du jeu de données")
-        st.dataframe(data.head())  # Affichage de l'aperçu du jeu de données
+        st.dataframe(data.head())
 
         st.subheader("Description statistique du jeu de données")
         st.write(display_data_description(data))
 
-        col1, col2 = st.columns(2)
-        with col1:
-            target_column = st.selectbox("Sélectionnez la colonne cible pour la régression", data.columns)
-        with col2:
-            test_size = st.slider("Sélectionnez la taille de l'ensemble de test (%)", min_value=10, max_value=50,
-                                  value=20, step=5) / 100
+        matrice_correlation = st.toggle("Matrice de Corrélation", value=False)
+        if matrice_correlation:
+            st.subheader("Matrice de Corrélation")
+            st.dataframe(data.corr().style.background_gradient(cmap='coolwarm'))
 
-        st.write(f"Taille de l'ensemble de test : {test_size:.0%}")
+            st.write("Sélection des variables explicatives:")
+            st.write("1. Les variables fortement corrélées entre elles (> 0.95) sont considérées comme redondantes.")
+            st.write("2. Les variables ayant une corrélation absolue avec la cible > 0.1 sont sélectionnées.")
 
-        hyperparameter_tuning = st.selectbox("Méthode de réglage des hyperparamètres", ["Automatique", "Manuel"])
+        target_options = ["Choisir..."] + list(data.columns)
+        target_column = st.selectbox("Sélectionnez la colonne cible pour la régression", target_options)
 
-        selected_model = None
-        hyperparameters = None
+        if target_column and target_column != "Choisir...":
+            show_scatterplot = st.toggle("Afficher le Scatterplot", value=False)
+            if show_scatterplot:
+                scatterplot_options = ["Choisir..."] + [col for col in data.columns if col != target_column]
+                scatterplot_x = st.selectbox("Sélectionnez la variable pour l'axe X du scatterplot", scatterplot_options)
+                if scatterplot_x and scatterplot_x != "Choisir...":
+                    st.subheader(f"Scatterplot: {scatterplot_x} vs {target_column}")
+                    fig = plot_scatterplot(data, scatterplot_x, target_column)
+                    st.pyplot(fig)
 
-        if hyperparameter_tuning == "Manuel":
-            selected_model = st.selectbox("Sélectionnez un modèle",
-                                          ["ElasticNet", "Ridge", "Lasso", "RandomForest", "TweedieRegressor",
-                                           "LinearRegression"])
-            hyperparameters = get_manual_hyperparameters(selected_model)
+            create_model = st.toggle("Créer le modèle", value=False)
+            if create_model:
+                test_size = st.slider("Taille de l'ensemble de test (%)", 10, 50, 20, 5) / 100
+                hyperparameter_tuning = st.selectbox("Méthode de réglage des hyperparamètres", ["Automatique", "Manuel"])
 
-        if st.button("Analyser et Entraîner le Modèle"):
-            with st.spinner("Traitement en cours..."):
-                X, y = preprocess_data(data, target_column)
-                st.success("Prétraitement des données terminé.")
+                selected_model = None
+                hyperparameters = None
+                if hyperparameter_tuning == "Manuel":
+                    selected_model = st.selectbox("Sélectionnez un modèle",
+                        ["ElasticNet", "Ridge", "Lasso", "RandomForest", "TweedieRegressor", "LinearRegression"])
+                    hyperparameters = get_manual_hyperparameters(selected_model)
 
-                X = select_features(X, y)
-                st.write(f"Caractéristiques sélectionnées : {', '.join(X.columns)}")
+                if st.button("Analyser et Entraîner le Modèle"):
+                    with st.spinner("Traitement en cours..."):
+                        X, y = preprocess_data(data, target_column)
+                        X = select_features(X, y)
+                        st.session_state.results, st.session_state.X_test, st.session_state.y_test = train_and_evaluate_model(
+                            X, y, test_size, hyperparameter_tuning, selected_model, hyperparameters)
+                    st.success("Modèle entraîné avec succès!")
 
-                results, X_test, y_test = train_and_evaluate_model(X, y, test_size, hyperparameter_tuning, selected_model, hyperparameters)
-
-                st.subheader("Résultats de l'entraînement des modèles")
-                col1, col2 = st.columns(2)
-                for i, (name, result) in enumerate(results.items()):
-                    with (col1 if i % 2 == 0 else col2):
+                if 'results' in st.session_state:
+                    st.subheader("Résultats de l'entraînement des modèles")
+                    for name, result in st.session_state.results.items():
                         with st.expander(f"{name}"):
                             st.write(f"MSE: {result['mse']:.4f}")
                             st.write(f"R2 Score: {result['r2']:.4f}")
                             st.write(f"MAE: {result['mae']:.4f}")
                             st.write(f"RMSE: {result['rmse']:.4f}")
+                            st.write(f"CV RMSE (mean ± std): {result['cv_rmse_mean']:.4f} ± {result['cv_rmse_std']:.4f}")
 
                             if hyperparameter_tuning == "Automatique":
                                 st.subheader("Hyperparamètres choisis:")
@@ -209,37 +252,38 @@ def regression_page():
                                 for param, value in hyperparameters.items():
                                     st.write(f"{param}: {value}")
 
-                st.subheader("Comparaison des métriques")
-                fig = plot_results(results)
-                st.pyplot(fig)
 
-                best_model_name = min(results, key=lambda x: results[x]['mse'])
-                best_model = results[best_model_name]['model']
-                st.success(f"Meilleur modèle : {best_model_name}")
+                    best_model_name = min(st.session_state.results, key=lambda x: st.session_state.results[x]['mse'])
+                    st.success(f"Meilleur modèle : {best_model_name}")
 
-                # Ajout du slider pour sélectionner le nombre de lignes à afficher
-                nb_rows_to_display = st.slider("Choisissez le nombre de lignes à afficher", 1, 30, 5)
+                    Comparaison_metriques = st.toggle("Comparaison des métriques", value=False)
+                    if Comparaison_metriques:
+                        st.subheader("Comparaison des métriques")
+                        fig = plot_results(st.session_state.results)
+                        st.pyplot(fig)
 
-                # Comparaison entre les valeurs réelles et prédites
-                st.subheader(f"Comparaison entre les {nb_rows_to_display} premières lignes :")
-                st.write(f"Valeurs réelles de la colonne cible (\"{target_column}\") vs Valeurs prédites")
+                    Comparaison_valeurs = st.toggle("Affichage des comparaisons", value=False)
+                    if Comparaison_valeurs:
+                        nb_rows_to_display = st.slider("Nombre de lignes à afficher", 1, 30, 5)
+                        st.subheader(f"Comparaison entre les {nb_rows_to_display} premières lignes :")
+                        best_model = st.session_state.results[best_model_name]['model']
+                        comparison_df = pd.DataFrame({
+                            "Valeurs réelles": st.session_state.y_test[:nb_rows_to_display],
+                            "Valeurs prédites": best_model.predict(st.session_state.X_test)[:nb_rows_to_display]
+                        })
+                        st.dataframe(comparison_df)
 
-                # Création des colonnes "Valeurs réelles" et "Valeurs prédites"
-                comparison_df = pd.DataFrame({
-                    "Valeurs réelles de la cible": y_test[:nb_rows_to_display].values,
-                    "Valeurs prédites de la cible": best_model.predict(X_test)[:nb_rows_to_display]
-                })
+                    plot_Predictions = st.toggle("Valeurs Prédites vs Réelles", value=False)
+                    if plot_Predictions:
+                        st.subheader("Valeurs Prédites vs Réelles")
+                        best_model = st.session_state.results[best_model_name]['model']
+                        fig_pred = plot_predictions(best_model, st.session_state.X_test, st.session_state.y_test)
+                        st.pyplot(fig_pred)
 
-                # Affichage des deux colonnes
-                st.dataframe(comparison_df)
-
-                st.subheader("Valeurs Réelles vs Prédites")
-                fig_pred = plot_predictions(best_model, X_test, y_test)
-                st.pyplot(fig_pred)
-
-
-                if st.button("Sauvegarder le Meilleur Modèle"):
-                    st.success("Modèle sauvegardé avec succès !")
+                    if st.button("Sauvegarder le Meilleur Modèle"):
+                        st.success("Modèle sauvegardé avec succès !")
+        else:
+            st.write("Veuillez sélectionner une colonne cible pour continuer l'analyse.")
 
 
 if __name__ == "__main__":
