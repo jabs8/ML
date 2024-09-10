@@ -1,13 +1,11 @@
-from sklearn.utils import shuffle
 from imblearn.over_sampling import SMOTE
 from .functions import *
 import streamlit as st
 import pandas as pd
 from sklearn.metrics import classification_report
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+
 from PIL import Image
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score, KFold, StratifiedKFold, ShuffleSplit
-from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split, GridSearchCV
 import os
 from config import project_dir
 
@@ -15,8 +13,8 @@ project_dir = project_dir()
 
 
 def classification_page():
-    Présentation, Visualisation, PreProcessing, Modèles = st.tabs(
-        ["Présentation", "Visualisation", "Pre-processing", "Modèles"])
+    Présentation, Visualisation, Modèles = st.tabs(
+        ["Présentation", "Visualisation", "Modèles"])
 
     with Présentation:
         col1, col2, col3 = st.columns([2,5,2])
@@ -94,7 +92,6 @@ def classification_page():
                 for col in df_drop:
                     st.write(df_drop.corr()[col].sort_values(ascending=False))
 
-
     with Modèles:
 
         chosen_target = st.selectbox('Choose the Target Column', df.columns, index=len(df.columns) - 1, key="prepro")
@@ -109,78 +106,22 @@ def classification_page():
         X_res, y_res = sm.fit_resample(X, y)
         st.write(y_res.value_counts())
 
-        # Split dataset
         X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=target, random_state=random_state)
 
-        # Standardisation
-        scaler = StandardScaler()
-        X_train = scaler.fit_transform(X_train)
-        X_test = scaler.fit_transform(X_test)
-        le = LabelEncoder()
-        y_train = le.fit_transform(y_train)
-        y_test = le.fit_transform(y_test)
-
-        # Model
-        #cv_pick = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"])
-        model = SVC()
-        model.fit(X_train, y_train)
-        # print prediction results
-        y_pred = model.predict(X_test)
-
-
-        # Matrice de confusion
-
-        st.header("Validation")
-        cv_pick = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"])
-        nb_découpe = st.selectbox("Nombre de découpe", range(3,7,1))
-        if cv_pick == "KFold":
-            cv = KFold(nb_découpe)
-        elif cv_pick == "StratifiedKFold":
-            cv = StratifiedKFold(nb_découpe)
-        elif cv_pick == "ShuffleSplit":
-            cv = ShuffleSplit(nb_découpe, test_size=0.2)
-
-        cvs = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy").mean()
-        st.write("Validation score", cvs)
-        col1, col2 = st.columns([5, 5])
+        col1, col2, col3 = st.columns([5,1,5])
         with col1:
-            st.title("1er modèle")
-            st.write({
-                "C": 1,
-                "gamma": 'scale',
-                "kernel": "rbf"
-            })
-            report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
-            st.write('Classification Report')
-            st.table(report)
+            chosen_model1 = st.selectbox('Choisir un modèle', ['Support Vector Machines (SVC)', 'Forêts aléatoires',
+                                                               'Gaussian Naive Bayes'], key='1dd')
+            st.session_state['chosen_target'] = chosen_model1
 
-            # Matrice de confusion
-            st.write(plot_confusion_matrix(y_test, y_pred))
-            st.write(plot_class_distribution(y_pred, le))
+            model_selected(chosen_model1, X_train, X_test, y_train, y_test)
 
-        with col2:
-            st.title("Recherche du meilleur modèle")
-            # gridsearchcv
 
-            param_grid = {'C': [0.1, 1, 10, 100, 1000],
-                          'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-                          'kernel': ['rbf', 'poly']}
+        with col3:
+            chosen_model2 = st.selectbox('Choisir un modèle', ['Support Vector Machines (SVC)', 'Forêts aléatoires',
+                                                               'Gaussian Naive Bayes'], key='2gt')
+            st.session_state['chosen_target'] = chosen_model2
 
-            grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=3)
-            grid.fit(X_train, y_train)
-            st.write("Meilleurs paramètres")
-            st.write(grid.best_params_)
-            st.write("Meilleurs estimateur")
-            st.write(grid.best_estimator_)
-
-            y_pred_best = grid.best_estimator_.predict(X_test)
-
-            report_best = classification_report(y_test, y_pred_best, target_names=le.classes_, output_dict=True)
-            st.write('New Classification Report')
-            st.table(report_best)
-
-            # Matrice de confusion
-            st.write(plot_confusion_matrix(y_test, y_pred_best))
-            st.write(plot_class_distribution(y_pred_best, le))
+            model_selected(chosen_model2, X_train, X_test, y_train, y_test)
 
 
