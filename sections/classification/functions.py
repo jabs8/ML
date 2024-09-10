@@ -124,7 +124,8 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
         y_pred = model.predict(X_test)
         st.header("Validation")
         cv_pick1 = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"], index=2, key='ffzef')
-        nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='11')
+        nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='frfzef')
+        cv=5
         if cv_pick1 == "KFold":
             cv = KFold(nb_découpe)
         elif cv_pick1 == "StratifiedKFold":
@@ -134,7 +135,7 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
 
         cvs = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy").mean()
         st.write("Validation score", cvs)
-
+        st.write("Test score", model.score(X_test, y_test))
         report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
         st.write('Classification Report')
         st.table(report)
@@ -142,6 +143,15 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
         # Matrice de confusion
         st.write(plot_confusion_matrix(y_test, y_pred))
         st.write(plot_class_distribution(y_pred, le))
+
+        param_grid = {
+            'C': [0.1, 1, 10, 100],
+            'kernel': ['linear', 'rbf', 'poly'],
+            'gamma': ['scale', 'auto']
+        }
+        scoring = "accuracy"
+        grid_search_cv(model, param_grid, X_train, y_train, X_test, y_test, cv, scoring)
+
     elif chosen_model == 'Forêts aléatoires':
         st.title("Forêts aléatoires")
         model = RandomForestClassifier()
@@ -150,7 +160,7 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
         y_pred = model.predict(X_test)
         st.header("Validation")
         cv_pick = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"], key='20')
-        nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='21')
+        nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='fzef')
         if cv_pick == "KFold":
             cv = KFold(nb_découpe)
         elif cv_pick == "StratifiedKFold":
@@ -160,7 +170,7 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
 
         cvs = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy").mean()
         st.write("Validation score", cvs)
-
+        st.write("Test score", model.score(X_test, y_test))
         report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
         st.write('Classification Report')
         st.table(report)
@@ -168,6 +178,15 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
         # Matrice de confusion
         st.write(plot_confusion_matrix(y_test, y_pred))
         st.write(plot_class_distribution(y_pred, le))
+
+        param_grid = {
+            'n_estimators': [100, 200, 300],
+            'max_depth': [None, 10, 20, 30],
+            'min_samples_split': [2, 5, 10]
+        }
+        scoring = "accuracy"
+        grid_search_cv(model, param_grid, X_train, y_train, X_test, y_test, cv, scoring)
+
 
     elif chosen_model == 'Gaussian Naive Bayes':
         st.title("Gaussian Naive Bayes")
@@ -187,7 +206,7 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
 
         cvs = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy").mean()
         st.write("Validation score", cvs)
-
+        st.write("Test score", model.score(X_test, y_test))
         report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
         st.write('Classification Report')
         st.table(report)
@@ -195,3 +214,21 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
         # Matrice de confusion
         st.write(plot_confusion_matrix(y_test, y_pred))
         st.write(plot_class_distribution(y_pred, le))
+
+        param_grid ={'var_smoothing': [1e-9, 1e-8, 1e-7]}
+        scoring = "accuracy"
+        grid_search_cv(model, param_grid, X_train, y_train, X_test, y_test, cv, scoring)
+
+def grid_search_cv(model, param_grid, X_train, y_train, X_test, y_test, cv, scoring):
+    # Perform grid search
+    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv, scoring=scoring)
+    grid_search.fit(X_train, y_train)
+    # Best parameters and scores for each model
+    st.write("Meilleurs paramètres pour Random Forest:", grid_search.best_params_)
+    st.write("Meilleur score pour Random Forest:", grid_search.best_score_)
+    # Test the best models on the test set
+    best_model = grid_search.best_estimator_
+    st.write("Meilleur modèle Accuracy:", best_model.score(X_test, y_test))
+    # Matrice de confusion
+    y_pred = best_model.predict(X_test)
+    st.write(plot_confusion_matrix(y_test, y_pred))
