@@ -22,12 +22,14 @@ def classification_page():
             st.title("Bienvenue dans la classification des vins")
 
             # Uploader le csv
-            #df = pd.read_csv(f"{project_dir}data/vin.csv", index_col=0)
-            uploaded_file = st.file_uploader("Choisissez un fichier CSV", type="csv")
-            if uploaded_file:
-                df = pd.read_csv(uploaded_file, index_col=0)
 
-            image_path = os.path.join(project_dir, "images", "CouleursVins.jpg")
+            df = pd.read_csv(f"{project_dir}data/vin.csv", index_col=0)
+            '''uploaded_file = st.file_uploader("Choisissez un fichier CSV", type="csv")
+            try:
+                df = pd.read_csv(uploaded_file, index_col=0)
+            except: df = pd.DataFrame()'''
+            image_path = os.path.join("", "images", "CouleursVins.jpg")
+
             st.image(Image.open(image_path))
 
             st.header("📐 Forme du dataset")
@@ -94,8 +96,8 @@ def classification_page():
 
     with Modèles:
 
-        chosen_target = st.selectbox('Choose the Target Column', df.columns, index=len(df.columns) - 1, key="prepro")
-        st.session_state['chosen_target'] = chosen_target
+        chosen_target = st.selectbox('Choose the Target Column', df.columns, index=len(df.columns) - 1, key="model")
+        #st.session_state['chosen_target'] = chosen_target
         X = df.drop(chosen_target, axis=1)
         y = df[chosen_target]
         target = st.slider('Test_Size', 0.1, 0.9, value=0.2)
@@ -119,7 +121,7 @@ def classification_page():
 
         with col3:
             chosen_model2 = st.selectbox('Choisir un modèle', ['Support Vector Machines (SVC)', 'Forêts aléatoires',
-                                                               'Gaussian Naive Bayes'], key='2gt')
+                                                               'Gaussian Naive Bayes'], index=2, key='2gt')
             st.session_state['chosen_target'] = chosen_model2
 
             model_selected(chosen_model2, X_train, X_test, y_train, y_test)

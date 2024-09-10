@@ -46,7 +46,7 @@ def describe(df):
 def analyze_target(df):
     categorical_columns = df.select_dtypes(['object', 'category']).columns
     if len(categorical_columns) > 0:
-        target_col = st.selectbox("Choisissez la colonne cible (target)", df.columns, placeholder='target')
+        target_col = st.selectbox("Choisissez la colonne cible (target)", df.columns, index=13)
         st.write(df[target_col].value_counts())
         # Pie chart des valeurs cibles
         fig, ax = plt.subplots()
@@ -123,7 +123,7 @@ def model_selected(chosen_model, X_train, X_test, y_train, y_test):
         # print prediction results
         y_pred = model.predict(X_test)
         st.header("Validation")
-        cv_pick1 = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"], key='ffzef')
+        cv_pick1 = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"], index=2, key='ffzef')
         nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='11')
         if cv_pick1 == "KFold":
             cv = KFold(nb_découpe)
