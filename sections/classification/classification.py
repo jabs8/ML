@@ -96,7 +96,6 @@ def classification_page():
     with Modèles:
 
         chosen_target = st.selectbox('Choose the Target Column', df.columns, index=len(df.columns) - 1, key="model")
-        #st.session_state['chosen_target'] = chosen_target
         X = df.drop(chosen_target, axis=1)
         y = df[chosen_target]
         target = st.slider('Test_Size', 0.1, 0.9, value=0.2)
