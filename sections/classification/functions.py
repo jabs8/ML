@@ -1,9 +1,16 @@
 import streamlit as st
 from lazypredict.Supervised import LazyClassifier
 import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import numpy as np
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score, KFold, StratifiedKFold, ShuffleSplit
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import classification_report
+
 
 def describe(df):
     st.table(df.describe())
@@ -100,3 +107,91 @@ def plot_class_distribution(y_test, le):
     plt.xticks(le.classes_)
     plt.show()
     return fig
+
+def model_selected(chosen_model, X_train, X_test, y_train, y_test):
+    # Standardisation
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.fit_transform(X_test)
+    le = LabelEncoder()
+    y_train = le.fit_transform(y_train)
+    y_test = le.fit_transform(y_test)
+    if chosen_model == 'Support Vector Machines (SVC)':
+        st.title("Support Vector Machines (SVC)")
+        model = SVC()
+        model.fit(X_train, y_train)
+        # print prediction results
+        y_pred = model.predict(X_test)
+        st.header("Validation")
+        cv_pick1 = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"], key='ffzef')
+        nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='11')
+        if cv_pick1 == "KFold":
+            cv = KFold(nb_découpe)
+        elif cv_pick1 == "StratifiedKFold":
+            cv = StratifiedKFold(nb_découpe)
+        elif cv_pick1 == "ShuffleSplit":
+            cv = ShuffleSplit(nb_découpe, test_size=0.2)
+
+        cvs = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy").mean()
+        st.write("Validation score", cvs)
+
+        report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
+        st.write('Classification Report')
+        st.table(report)
+
+        # Matrice de confusion
+        st.write(plot_confusion_matrix(y_test, y_pred))
+        st.write(plot_class_distribution(y_pred, le))
+    elif chosen_model == 'Forêts aléatoires':
+        st.title("Forêts aléatoires")
+        model = RandomForestClassifier()
+        model.fit(X_train, y_train)
+        # print prediction results
+        y_pred = model.predict(X_test)
+        st.header("Validation")
+        cv_pick = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"], key='20')
+        nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='21')
+        if cv_pick == "KFold":
+            cv = KFold(nb_découpe)
+        elif cv_pick == "StratifiedKFold":
+            cv = StratifiedKFold(nb_découpe)
+        elif cv_pick == "ShuffleSplit":
+            cv = ShuffleSplit(nb_découpe, test_size=0.2)
+
+        cvs = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy").mean()
+        st.write("Validation score", cvs)
+
+        report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
+        st.write('Classification Report')
+        st.table(report)
+
+        # Matrice de confusion
+        st.write(plot_confusion_matrix(y_test, y_pred))
+        st.write(plot_class_distribution(y_pred, le))
+
+    elif chosen_model == 'Gaussian Naive Bayes':
+        st.title("Gaussian Naive Bayes")
+        model = GaussianNB()
+        model.fit(X_train, y_train)
+        # print prediction results
+        y_pred = model.predict(X_test)
+        st.header("Validation")
+        cv_pick = st.selectbox("Choisir un mode de découpe", ["KFold", "StratifiedKFold", "ShuffleSplit"], key='30')
+        nb_découpe = st.selectbox("Nombre de découpe", range(3, 7, 1), key='31')
+        if cv_pick == "KFold":
+            cv = KFold(nb_découpe)
+        elif cv_pick == "StratifiedKFold":
+            cv = StratifiedKFold(nb_découpe)
+        elif cv_pick == "ShuffleSplit":
+            cv = ShuffleSplit(nb_découpe, test_size=0.2)
+
+        cvs = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy").mean()
+        st.write("Validation score", cvs)
+
+        report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
+        st.write('Classification Report')
+        st.table(report)
+
+        # Matrice de confusion
+        st.write(plot_confusion_matrix(y_test, y_pred))
+        st.write(plot_class_distribution(y_pred, le))
