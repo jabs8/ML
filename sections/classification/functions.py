@@ -16,10 +16,30 @@ def describe(df):
     else:
         st.write("❌ Données non Standardisées")
 
+    st.write("Description et Analyse des colonnes")
+    st.write("**alcohol**: degré d'alcool du vin")
+    st.write("**malic_acid**: Acide malique, sa teneur influence l'acidité d'un vin")
+    st.write("**ash**: cendres")
+    st.write("**alcalinity_of_ash**: alcalinité des cendres")
+    st.write("**magnesium**: magnésium en mg")
+    st.write("**total_phenols**: Composition phénolique du vin. Ils contribuent à la couleur, à la qualité tannique, "
+             "à la stabilité colloïdale et à l’aptitude de vieillissement des vins. ")
+    st.write("**flavanoids**: molécules naturelles appartenant à la famille des polyphénols."
+             "Contribuent à la couleur et à la sensation en bouche du vin")
+    st.write("**nonflavanoid_phenols**: Autre phénols, contribuent au goût, à la couleur et à la sensation en bouche du vin")
+    st.write("**proanthocyanins**: Autre molécules de la composition phénolique des vins.")
+    st.write("**color_intensity**: Intensité de la couleur du vin")
+    st.write("**hue**: teinte du vin")
+    st.write("**od280/od315_of_diluted_wines**: Rapport  d'absorbance, qualifie la concentration de la protéine")
+    st.write("**proline**: principal acide aminé du vin rouge et un élément important de la nutrition et de la saveur du vin.")
+    st.write("**target**: 3 catégories de vin a prédire (sucré, amer et équilibré")
+
+
+
 def analyze_target(df):
     categorical_columns = df.select_dtypes(['object', 'category']).columns
     if len(categorical_columns) > 0:
-        target_col = st.selectbox("Choisissez une colonne cible (target)", df.columns)
+        target_col = st.selectbox("Choisissez la colonne cible (target)", df.columns, placeholder='target')
         st.write(df[target_col].value_counts())
         # Pie chart des valeurs cibles
         fig, ax = plt.subplots()
@@ -36,19 +56,23 @@ def analyze_target(df):
             ax.set_ylabel("Nombre d'occurrences")
             st.pyplot(fig)
 
-def correlation_matrix(df):
-    numeric_columns = df.select_dtypes(['float64', 'int64']).columns
-    if len(numeric_columns) > 1:
-        fig, ax = plt.subplots()
-        sns.heatmap(df.drop("target", axis=1).corr(), annot=True, fmt=".1f", cmap="coolwarm", ax=ax)
-        st.pyplot(fig)
+    df_vin_amer = df[df['target'] == 'Vin amer']
+    df_vin_sucré = df[df['target'] == 'Vin sucré']
+    df_vin_équilibré = df[df['target'] == 'Vin équilibré']
+    st.subheader('Analyse de la target en fonction de certaines features')
+    chosen_feature = st.selectbox('Choisir une feature : ', df.columns)
+    fig, ax = plt.subplots()
+    sns.distplot(df_vin_amer[chosen_feature], label="Vin amer")
+    sns.distplot(df_vin_sucré[chosen_feature], label="Vin sucré")
+    sns.distplot(df_vin_équilibré[chosen_feature], label="Vin équilibré")
+    ax.legend()
+    st.pyplot(fig)
 
-def pair_plot(df):
-    st.write('Pairplot of Vine Dataset')
-    pp = sns.pairplot(df, hue='target')
-    # Adjust the size of the plot for better display in Streamlit
-    plt.subplots_adjust(top=0.9)
-    return st.pyplot(pp.figure)
+def correlation_matrix(df):
+    #fig, ax = plt.subplots()
+    fig = sns.clustermap(df.drop("target", axis=1).corr())
+    st.pyplot(fig)
+
 
 def lazyclass(X_train, X_test, y_train, y_test):
     st.header('lazy')
