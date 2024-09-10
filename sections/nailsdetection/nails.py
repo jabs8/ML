@@ -3,7 +3,7 @@ import streamlit as st
 from PIL import Image, ImageDraw
 import os
 from config import project_dir
-
+import numpy as np
 # Chemin absolu du répertoire du projet
 project_dir = project_dir()
 
@@ -13,35 +13,59 @@ ROBOFLOW_PROJECT_ID = "project1-pfqn3"
 ROBOFLOW_MODEL_VERSION = "2"
 
 def nail_page():
-    # Division de la page en 3 colonnes
-    col1, col2, col3 = st.columns([1, 8, 1])
-    with col2:
-        st.title("Bienvenue dans la détection d'ongles (Modèle Roboflow)")
-        image_path = os.path.join(project_dir, "images", "Ongles.jpg")
-        st.image(Image.open(image_path))
-        # Chargement de l'image par l'utilisateur
-        uploaded_image = st.file_uploader("Téléchargez une image", type=["jpg", "jpeg", "png"])
+    Présentation, Upload, Predictions = st.tabs(["Présentation", "Upload", "Predictions"])
 
-        if uploaded_image is not None:
-            # Afficher l'image téléchargée
-            image = Image.open(uploaded_image)
-            st.image(image, caption="Image téléchargée")
+    with Présentation:
+        col1, col2 = st.columns([5,5])
+        with col1:
+            st.title("Bienvenue dans la détection d'ongles (Modèle Roboflow)")
+            image_path = os.path.join(project_dir, "images", "Ongles.jpg")
+            st.image(Image.open(image_path))
 
-            # Bouton pour faire une prédiction
-            if st.button("Faire une prédiction"):
-                # Appeler la fonction de prédiction
-                result = predict_image(image)
+        with col2:
+            st.header("Présentation")
+            st.write("L'objectif est de détecter les ongles sur une image donnée.")
+            st.write("Le modèle développé sur Roboflow est un modèle de deep learning ")
+            st.write("Le dataset contient 17 images de base")
 
-                # Afficher les résultats de la prédiction
-                if result:
+            st.header("Augmentations")
+            st.write("Le dataset a été augmenté a 41 image grâce à l'outil d'augmentation de Roboflow comme suit:")
+            st.write("Outputs per training example: 3")
+            st.write("Rotation: Between -15° and +15°")
+            st.write("Shear: ±10° Horizontal, ±10° Vertical")
+            st.write("Brightness: Between -15% and +15%")
+            st.write("Exposure: Between -10% and +10%")
+            st.write("Blur: Up to 2.5px")
+
+            st.header("Cliquez sur l'onglet Upload pour charger une image")
+
+    with Upload:
+         col1, col2 =st.columns([5,2])
+         with col1:
+            # Chargement de l'image par l'utilisateur
+            uploaded_image = st.file_uploader("Téléchargez une image", type=["jpg", "jpeg", "png"])
+
+            if uploaded_image is not None:
+                # Afficher l'image téléchargée
+                image = Image.open(uploaded_image)
+                st.image(image, caption="Image téléchargée")
+
+                with col2:
+                    st.subheader("Dimensions de l'image")
+                    st.write('(hauteur, largeur, nombre de couleurs)')
+                    st.write(np.array(image).shape)
+                    st.subheader("Cliquez sur l'onglet Prédiction pour tester le modèle Roboflow")
+
+    with Predictions:
+        if st.button("Faire une prédiction"):
+            result = predict_image(image)
+            if result:
+                col1, col2 = st.columns([2,5])
+                with col1:
                     st.subheader("Résultats de la prédiction")
-                    #st.json(result)  # Afficher les résultats sous forme JSON
-
+                    #st.json(result)
                     time = result.get("time")
-                    # Ajouter du texte ou dessiner des boîtes sur l'image ici si nécessaire
                     st.write(f"Prédiction(s) en {time} secondes")
-
-                    # Affichage des résultats de la prédiction:
                     predictions = result.get("predictions", [])
                     p = 0
                     for pred in predictions:
@@ -49,15 +73,10 @@ def nail_page():
                         st.write(f"Prédiction : {p}, Confiance : {confidence}")
                         p += 1
 
-                    st.subheader("Résultats de la détection")
-
-                    # Extraire les prédictions
+                with col2:
+                    st.subheader("Résultats sur l'image")
                     detections = result.get("predictions")
-
-                    # Dessiner les prédictions sur l'image
                     image_with_detections = draw_detections(image, detections)
-
-                    # Afficher l'image avec les annotations
                     st.image(image_with_detections, caption="Image avec détections", use_column_width=True)
 
 # Fonction pour faire une prédiction via l'API Roboflow
@@ -79,9 +98,11 @@ def draw_detections(image, detections):
         x = detection["x"]
         y = detection["y"]
         confidence = detection["confidence"]
+        # Adapt text size to image size
+        xi, yi, ci = np.array(image).shape
         # Draw polygon with red outline
-        draw.polygon(points, outline="red", width=8)
+        draw.polygon(points, outline="red", width=round(1*xi/250))
         # Ajouter une étiquette avec le nom de la classe et la confiance
-        draw.text((x, y+100), f"Pred {p} ({confidence:.2f}%)",font_size=69, fill="black", align="down")
+        draw.text((x, y), f"{p}", fill='black', align="down", font_size=10*xi/250)
         p+=1
     return image

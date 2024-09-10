@@ -20,6 +20,7 @@ frozenlist==1.4.1
 gitdb==4.0.11
 GitPython==3.1.43
 idna==3.8
+imbalanced-learn==0.12.3
 importlib_resources==6.4.4
 inference-sdk==0.17.1
 Jinja2==3.1.4
