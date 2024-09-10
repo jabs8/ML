@@ -22,12 +22,14 @@ def classification_page():
             st.title("Bienvenue dans la classification des vins")
 
             # Uploader le csv
+
             df = pd.read_csv(f"{project_dir}data/vin.csv", index_col=0)
             '''uploaded_file = st.file_uploader("Choisissez un fichier CSV", type="csv")
             try:
                 df = pd.read_csv(uploaded_file, index_col=0)
             except: df = pd.DataFrame()'''
             image_path = os.path.join("", "images", "CouleursVins.jpg")
+
             st.image(Image.open(image_path))
 
             st.header("📐 Forme du dataset")

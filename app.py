@@ -44,11 +44,8 @@ elif type_data == "Introduction":
     image_path = os.path.join(project_dir, "images", "logoML.png")
     st.logo(image_path, icon_image=image_path)
     intro()
-elif type_data == "about_us":
-    image_path = os.path.join(project_dir, "images", "logoML.png")
-    st.logo(image_path, icon_image=image_path)
-    intro()
 elif type_data == "About Us":
     image_path = os.path.join(project_dir, "images", "teampicture.png")
     st.logo(image_path, icon_image=image_path)
     about_us_page()
+
