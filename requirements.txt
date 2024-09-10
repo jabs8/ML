@@ -40,7 +40,7 @@ mypy-extensions==1.0.0
 narwhals==1.6.2
 numpy==1.23.2
 nvidia-nccl-cu12==2.22.3
-opencv-python==4.10.0.84
+opencv-python==4.5.1.48
 opencv-python-headless==4.5.1.48
 packaging==24.1
 pandas==2.0.3
